@@ -1,12 +1,16 @@
 import axios from 'axios';
-import { API } from "../Configs/config";
+import { popularAPI, topRatedAPI, upcomingAPI } from "../Configs/config";
 
-export const getData = async () => {
+const fetchMovieData = async (api) => {
   try {
-    const response = await axios.get(API);
-    console.log("response: " + JSON.stringify(response));
+    const response = await axios.get(api);
     return response.data.results;
   } catch (error) {
-    console.error(error);
+    console.error('Failed to fetch data:', error);
+    return [];
   }
 };
+
+export const getPopularData = () => fetchMovieData(popularAPI);
+export const getTopRatedData = () => fetchMovieData(topRatedAPI);
+export const getUpcomingData = () => fetchMovieData(upcomingAPI);

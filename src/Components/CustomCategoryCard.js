@@ -1,60 +1,102 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { FlatList, Image, StyleSheet, Text, View } from 'react-native';
+import React, {useEffect, useState, useCallback} from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Colors from '../Theme/Colors';
-import { getData } from '../Service/MovieDataService';
+import {
+  getPopularData,
+  getTopRatedData,
+  getUpcomingData,
+} from '../Service/MovieDataService';
+
+const { width } = Dimensions.get('window');
 
 const CustomCategoryCard = () => {
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState({
+    popular: [],
+    topRated: [],
+    upcoming: [],
+  });
 
-  const fetchData = useCallback(async () => {
+  const fetchAllData = useCallback(async () => {
     try {
-      const result = await getData();
-      setMovies(result);
+      const [popular, topRated, upcoming] = await Promise.all([
+        getPopularData(),
+        getTopRatedData(),
+        getUpcomingData(),
+      ]);
+      setMovies({popular, topRated, upcoming});
     } catch (error) {
       console.error('Failed to fetch data', error);
     }
   }, []);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchAllData();
+  }, [fetchAllData]);
 
-  const renderCategory = ({ item }) => (
-    <View style={styles.videoCard}>
-      <Image
-        source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }}
-        style={styles.videoImage}
-        resizeMode="cover"
-      />
-      {/* <View style={styles.titleContainer}>
+  const renderCategory = useCallback(
+    ({item}) => (
+      <View style={styles.videoCard}>
+        <Image
+          source={{uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`}}
+          style={styles.videoImage}
+          resizeMode="cover"
+        />
+        <View style={styles.titleContainer}>
         <Text numberOfLines={2} style={styles.videoTitle}>
           {item.title}
         </Text>
-      </View> */}
+      </View>
+      </View>
+    ),
+    [],
+  );
+
+  const renderCategorySection = (title, data) => (
+    <View style={styles.categorySection}>
+      <Text style={styles.categoryTitle}>{title}</Text>
+      <FlatList
+        horizontal
+        data={data}
+        keyExtractor={item => item.id.toString()}
+        renderItem={renderCategory}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
     </View>
   );
 
   return (
     <View style={styles.categoryContainer}>
-      <Text style={styles.categoryTitle}>Popular</Text>
-      <FlatList
-        horizontal
-        data={movies}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderCategory}
-        showsHorizontalScrollIndicator={false}
-      />
+      <ScrollView contentContainerStyle={styles.scrollViewContent}  showsVerticalScrollIndicator={false}>
+        {renderCategorySection('Popular', movies.popular)}
+        {renderCategorySection('Top Rated', movies.topRated)}
+        {renderCategorySection('Upcoming', movies.upcoming)}
+        {renderCategorySection('Upcoming', movies.upcoming)}
+      </ScrollView>
     </View>
   );
 };
 
-export default CustomCategoryCard;
+export default React.memo(CustomCategoryCard);
 
 const styles = StyleSheet.create({
   categoryContainer: {
     width: '100%',
     marginTop: 20,
     paddingHorizontal: 15,
+  },
+  categorySection: {
+    marginBottom: 15,
+  },
+  scrollViewContent: {
+    paddingBottom: 100,
   },
   categoryTitle: {
     fontSize: 18,
@@ -63,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   videoCard: {
-    width: 120,
+    width: width * 0.3,
     backgroundColor: Colors.backgroundColor,
     elevation: 5,
     alignItems: 'center',
@@ -73,13 +115,13 @@ const styles = StyleSheet.create({
   },
   videoImage: {
     width: '100%',
-    height: 160,
+    height: width * 0.45,
   },
   titleContainer: {
-    position: 'absolute',
+    // position: 'absolute',
     bottom: 0,
     width: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    // backgroundColor: 'rgba(0, 0, 0, 0.6)',
     paddingVertical: 5,
     paddingHorizontal: 8,
   },
@@ -87,5 +129,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text.white,
     textAlign: 'center',
+  },
+  listContent: {
+    // paddingLeft: 10,
+    paddingBottom: 10,
   },
 });
